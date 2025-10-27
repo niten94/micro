@@ -31,13 +31,13 @@ import (
 
 var (
 	// Command line flags
-	flagVersion   = flag.Bool("version", false, "Show the version number and information")
-	flagConfigDir = flag.String("config-dir", "", "Specify a custom location for the configuration directory")
-	flagOptions   = flag.Bool("options", false, "Show all option help")
-	flagDebug     = flag.Bool("debug", false, "Enable debug mode (prints debug info to ./log.txt)")
-	flagProfile   = flag.Bool("profile", false, "Enable CPU profiling (writes profile info to ./micro.prof)")
-	flagPlugin    = flag.String("plugin", "", "Plugin command")
-	flagClean     = flag.Bool("clean", false, "Clean configuration directory")
+	flagVersion   = flag.Bool("version", false, "")
+	flagConfigDir = flag.String("config-dir", "", "")
+	flagOptions   = flag.Bool("options", false, "")
+	flagDebug     = flag.Bool("debug", false, "")
+	flagProfile   = flag.Bool("profile", false, "")
+	flagPlugin    = flag.String("plugin", "", "")
+	flagClean     = flag.Bool("clean", false, "")
 	optionFlags   map[string]*string
 
 	sighup chan os.Signal
@@ -92,8 +92,8 @@ func InitFlags() {
 
 	optionFlags = make(map[string]*string)
 
-	for k, v := range config.DefaultAllSettings() {
-		optionFlags[k] = flag.String(k, "", fmt.Sprintf("The %s option. Default value: '%v'.", k, v))
+	for k, _ := range config.DefaultAllSettings() {
+		optionFlags[k] = flag.String(k, "", "")
 	}
 
 	flag.Parse()
