@@ -93,6 +93,8 @@ file (see "> help options").
 Use "micro -options" to see the full list of configuration options
 `
 
+// InitFlags prepares the flag parsing, parses arguments, and executes most
+// flags that will exit after
 func InitFlags() {
 	flag.Usage = func() {
 		fmt.Print(strings.ReplaceAll(usage[1:], "^^", "`"))
@@ -111,10 +113,7 @@ func InitFlags() {
 		fmt.Println("Version:", util.Version)
 		fmt.Println("Commit hash:", util.CommitHash)
 		fmt.Println("Compiled on", util.CompileDate)
-		exit(0)
-	}
-
-	if *flagOptions {
+	} else if *flagOptions {
 		// If -options was passed
 		var keys []string
 		m := config.DefaultAllSettings()
@@ -127,12 +126,11 @@ func InitFlags() {
 			fmt.Printf("-%s value\n", k)
 			fmt.Printf("\tDefault value: '%v'\n", v)
 		}
-		exit(0)
+	} else {
+		return
 	}
 
-	if util.Debug == "OFF" && *flagDebug {
-		util.Debug = "ON"
-	}
+	exit(0)
 }
 
 // DoPluginFlags parses and executes any flags that require LoadAllPlugins (-plugin and -clean)
@@ -310,6 +308,10 @@ func main() {
 	var err error
 
 	InitFlags()
+
+	if util.Debug == "OFF" && *flagDebug {
+		util.Debug = "ON"
+	}
 
 	if *flagProfile {
 		f, err := os.Create("micro.prof")
