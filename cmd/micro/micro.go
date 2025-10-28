@@ -39,6 +39,7 @@ var (
 	flagProfile   = flag.Bool("profile", false, "")
 	flagPlugin    = flag.String("plugin", "", "")
 	flagClean     = flag.Bool("clean", false, "")
+	flagHelp      = flag.Bool("help", false, "")
 	optionFlags   map[string]*string
 
 	sighup chan os.Signal
@@ -46,11 +47,25 @@ var (
 	timerChan chan func()
 )
 
-// Note: keep this in sync with the man page in assets/packaging/micro.1
+// Note: keep usage and help in sync with the man page at assets/packaging/micro.1
+
 const usage = `
 Usage: micro [OPTION]... [FILE]... [+LINE[:COL]] [+/REGEX]
        micro [OPTION]... [FILE[:LINE[:COL]]]...
          -> only if the ^^parsecursor^^ option is enabled
+`
+
+const shortHelp = `
+       micro [OPTION]... -plugin install|remove|update|search|list|available ...
+       micro [OPTION]... -clean
+       micro -options|-help|-version
+
+OPTIONS: [-config-dir DIR] [-<option> value]... [-debug] [-profile]
+
+Run "micro -help" to see the description of all options
+`
+
+const help = `
        micro [OPTION]... COMMAND
 
 -config-dir DIR
@@ -71,6 +86,8 @@ The following commands run then exit.
 	Clean the configuration directory
 -options
 	Show all options help
+-help
+	Show this help
 -version
 	Show the version number and information
 
@@ -102,7 +119,7 @@ Use "micro -options" to see the full list of configuration options
 // flags that will exit after
 func InitFlags() {
 	flag.Usage = func() {
-		fmt.Print(strings.ReplaceAll(usage[1:], "^^", "`"))
+		fmt.Print(strings.ReplaceAll(usage[1:] + shortHelp[1:], "^^", "`"))
 	}
 
 	optionFlags = make(map[string]*string)
@@ -113,7 +130,10 @@ func InitFlags() {
 
 	flag.Parse()
 
-	if *flagVersion {
+	if *flagHelp {
+		// If -help was passed
+		fmt.Print(strings.ReplaceAll(usage[1:] + help[1:], "^^", "`"))
+	} else if *flagVersion {
 		// If -version was passed
 		fmt.Println("Version:", util.Version)
 		fmt.Println("Commit hash:", util.CommitHash)
