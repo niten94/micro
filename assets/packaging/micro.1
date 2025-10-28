@@ -11,7 +11,14 @@ micro \- A modern and intuitive terminal-based text editor
 .B micro
 .RI [ OPTION ]...\&
 .RI [ FILE [: LINE [: COL ]]]...\&
-\& (only if the `parsecursor` option is enabled)
+.RS 4
+.\" some terminals might not render arrows properly, so \(-> isn't used
+\& -> only if the `parsecursor` option is enabled
+.RE
+.br
+.B micro
+.RI [ OPTION ]...\&
+.I COMMAND
 .SH DESCRIPTION
 Micro is a terminal-based text editor that aims to be easy to use and intuitive, while also taking advantage of the full capabilities
 of modern terminals. It comes as one single, batteries-included, static binary with no dependencies.
@@ -21,11 +28,6 @@ enjoyable to use full time, whether you work in the terminal because you prefer 
 
 Use Ctrl-q to quit, Ctrl-s to save, and Ctrl-g to open the in-editor help menu.
 .SH OPTIONS
-.PP
-.B \-clean
-.RS 4
-Clean the configuration directory and exit
-.RE
 .PP
 .B \-config\-dir
 .I DIR
@@ -46,11 +48,6 @@ Specify a line and column to start the cursor at when opening a buffer
 Specify a regex to search for when opening a buffer
 .RE
 .PP
-.B \-options
-.RS 4
-Show all options help and exit
-.RE
-.PP
 .B \-debug
 .RS 4
 Enable debug mode (enables logging to ./log.txt)
@@ -60,10 +57,24 @@ Enable debug mode (enables logging to ./log.txt)
 .RS 4
 Enable CPU profiling (writes profile info to ./micro.prof so it can be analyzed later with "go tool pprof micro.prof")
 .RE
+
+The following commands run then exit.
+.RS 4
+.PP
+.B \-clean
+.RS 4
+Clean the configuration directory
+.RE
+.PP
+.B \-options
+.RS 4
+Show all options help
+.RE
 .PP
 .B \-version
 .RS 4
-Show the version number and information and exit
+Show the version number and information
+.RE
 .RE
 
 Micro's plugins can be managed at the command line with the following commands.

@@ -49,9 +49,10 @@ var (
 // Note: keep this in sync with the man page in assets/packaging/micro.1
 const usage = `
 Usage: micro [OPTION]... [FILE]... [+LINE[:COL]] [+/REGEX]
-       micro [OPTION]... [FILE[:LINE[:COL]]]...  (only if the ^^parsecursor^^ option is enabled)
--clean
-	Clean the configuration directory and exit
+       micro [OPTION]... [FILE[:LINE[:COL]]]...
+         -> only if the ^^parsecursor^^ option is enabled
+       micro [OPTION]... COMMAND
+
 -config-dir DIR
 	Specify a custom location for the configuration directory
 FILE:LINE[:COL] (only if the ^^parsecursor^^ option is enabled)
@@ -59,15 +60,19 @@ FILE +LINE[:COL]
 	Specify a line and column to start the cursor at when opening a buffer
 +/REGEX
 	Specify a regex to search for when opening a buffer
--options
-	Show all options help and exit
 -debug
 	Enable debug mode (enables logging to ./log.txt)
 -profile
 	Enable CPU profiling (writes profile info to ./micro.prof
 	so it can be analyzed later with "go tool pprof micro.prof")
+
+The following commands run then exit.
+-clean
+	Clean the configuration directory
+-options
+	Show all options help
 -version
-	Show the version number and information and exit
+	Show the version number and information
 
 Micro's plugins can be managed at the command line with the following commands.
 -plugin install PLUGIN...
