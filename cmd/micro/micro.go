@@ -13,6 +13,7 @@ import (
 	"runtime/pprof"
 	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -45,49 +46,56 @@ var (
 	timerChan chan func()
 )
 
+// Note: keep this in sync with the man page in assets/packaging/micro.1
+const usage = `
+Usage: micro [OPTION]... [FILE]... [+LINE[:COL]] [+/REGEX]
+       micro [OPTION]... [FILE[:LINE[:COL]]]...  (only if the ^^parsecursor^^ option is enabled)
+-clean
+	Clean the configuration directory and exit
+-config-dir dir
+	Specify a custom location for the configuration directory
+FILE:LINE[:COL] (only if the ^^parsecursor^^ option is enabled)
+FILE +LINE[:COL]
+	Specify a line and column to start the cursor at when opening a buffer
++/REGEX
+	Specify a regex to search for when opening a buffer
+-options
+	Show all options help and exit
+-debug
+	Enable debug mode (enables logging to ./log.txt)
+-profile
+	Enable CPU profiling (writes profile info to ./micro.prof
+	so it can be analyzed later with "go tool pprof micro.prof")
+-version
+	Show the version number and information and exit
+
+Micro's plugins can be managed at the command line with the following commands.
+-plugin install [PLUGIN]...
+	Install plugin(s)
+-plugin remove [PLUGIN]...
+	Remove plugin(s)
+-plugin update [PLUGIN]...
+	Update plugin(s) (if no argument is given, updates all plugins)
+-plugin search [PLUGIN]...
+	Search for a plugin
+-plugin list
+	List installed plugins
+-plugin available
+	List available plugins
+
+Micro's options can also be set via command line arguments for quick
+adjustments. For real configuration, please use the settings.json
+file (see 'help options').
+
+-<option> value
+	Set ^^option^^ to ^^value^^ for this session
+	For example: ^^micro -syntax off file.c^^
+Use ^^micro -options^^ to see the full list of configuration options
+`
+
 func InitFlags() {
-	// Note: keep this in sync with the man page in assets/packaging/micro.1
 	flag.Usage = func() {
-		fmt.Println("Usage: micro [OPTION]... [FILE]... [+LINE[:COL]] [+/REGEX]")
-		fmt.Println("       micro [OPTION]... [FILE[:LINE[:COL]]]...  (only if the `parsecursor` option is enabled)")
-		fmt.Println("-clean")
-		fmt.Println("    \tClean the configuration directory and exit")
-		fmt.Println("-config-dir dir")
-		fmt.Println("    \tSpecify a custom location for the configuration directory")
-		fmt.Println("FILE:LINE[:COL] (only if the `parsecursor` option is enabled)")
-		fmt.Println("FILE +LINE[:COL]")
-		fmt.Println("    \tSpecify a line and column to start the cursor at when opening a buffer")
-		fmt.Println("+/REGEX")
-		fmt.Println("    \tSpecify a regex to search for when opening a buffer")
-		fmt.Println("-options")
-		fmt.Println("    \tShow all options help and exit")
-		fmt.Println("-debug")
-		fmt.Println("    \tEnable debug mode (enables logging to ./log.txt)")
-		fmt.Println("-profile")
-		fmt.Println("    \tEnable CPU profiling (writes profile info to ./micro.prof")
-		fmt.Println("    \tso it can be analyzed later with \"go tool pprof micro.prof\")")
-		fmt.Println("-version")
-		fmt.Println("    \tShow the version number and information and exit")
-
-		fmt.Print("\nMicro's plugins can be managed at the command line with the following commands.\n")
-		fmt.Println("-plugin install [PLUGIN]...")
-		fmt.Println("    \tInstall plugin(s)")
-		fmt.Println("-plugin remove [PLUGIN]...")
-		fmt.Println("    \tRemove plugin(s)")
-		fmt.Println("-plugin update [PLUGIN]...")
-		fmt.Println("    \tUpdate plugin(s) (if no argument is given, updates all plugins)")
-		fmt.Println("-plugin search [PLUGIN]...")
-		fmt.Println("    \tSearch for a plugin")
-		fmt.Println("-plugin list")
-		fmt.Println("    \tList installed plugins")
-		fmt.Println("-plugin available")
-		fmt.Println("    \tList available plugins")
-
-		fmt.Print("\nMicro's options can also be set via command line arguments for quick\nadjustments. For real configuration, please use the settings.json\nfile (see 'help options').\n\n")
-		fmt.Println("-<option> value")
-		fmt.Println("    \tSet `option` to `value` for this session")
-		fmt.Println("    \tFor example: `micro -syntax off file.c`")
-		fmt.Println("\nUse `micro -options` to see the full list of configuration options")
+		fmt.Print(strings.ReplaceAll(usage[1:], "^^", "`"))
 	}
 
 	optionFlags = make(map[string]*string)
@@ -117,7 +125,7 @@ func InitFlags() {
 		for _, k := range keys {
 			v := m[k]
 			fmt.Printf("-%s value\n", k)
-			fmt.Printf("    \tDefault value: '%v'\n", v)
+			fmt.Printf("\tDefault value: '%v'\n", v)
 		}
 		exit(0)
 	}
