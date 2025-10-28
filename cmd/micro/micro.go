@@ -85,12 +85,12 @@ Micro's plugins can be managed at the command line with the following commands.
 
 Micro's options can also be set via command line arguments for quick
 adjustments. For real configuration, please use the settings.json
-file (see 'help options').
+file (see "> help options").
 
 -<option> value
 	Set ^^option^^ to ^^value^^ for this session
-	For example: ^^micro -syntax off file.c^^
-Use ^^micro -options^^ to see the full list of configuration options
+	For example: "micro -syntax off file.c"
+Use "micro -options" to see the full list of configuration options
 `
 
 func InitFlags() {
