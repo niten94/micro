@@ -52,7 +52,7 @@ Usage: micro [OPTION]... [FILE]... [+LINE[:COL]] [+/REGEX]
        micro [OPTION]... [FILE[:LINE[:COL]]]...  (only if the ^^parsecursor^^ option is enabled)
 -clean
 	Clean the configuration directory and exit
--config-dir dir
+-config-dir DIR
 	Specify a custom location for the configuration directory
 FILE:LINE[:COL] (only if the ^^parsecursor^^ option is enabled)
 FILE +LINE[:COL]
