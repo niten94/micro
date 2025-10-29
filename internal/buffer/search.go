@@ -3,7 +3,6 @@ package buffer
 import (
 	"regexp"
 	"regexp/syntax"
-	"unicode/utf8"
 
 	"github.com/zyedidia/micro/v2/internal/util"
 )
@@ -62,14 +61,15 @@ func (b *Buffer) findDown(redata *RegexpData, start, end Loc) ([2]Loc, bool) {
 	for i := start.Y; i <= end.Y; i++ {
 		l := b.LineBytes(i)
 		charpos := 0
+		from, to := 0, len(l)
 		padMode := 0
 
 		if i == end.Y {
 			nchars := util.CharacterCount(l)
 			end.X = util.Clamp(end.X, 0, nchars)
 			if end.X < nchars {
-				l = util.SliceStart(l, end.X+1)
 				padMode |= padEnd
+				to = util.NextRunePos(l, util.BytePosFromCharPos(l, end.X))
 			}
 		}
 
@@ -78,24 +78,23 @@ func (b *Buffer) findDown(redata *RegexpData, start, end Loc) ([2]Loc, bool) {
 			start.X = util.Clamp(start.X, 0, nchars)
 			if start.X > 0 {
 				charpos = start.X - 1
-				l = util.SliceEnd(l, charpos)
 				padMode |= padStart
+				from = util.PreviousRunePos(l, util.BytePosFromCharPos(l, start.X))
 			}
 		}
 
-		match := redata.regex[padMode].FindIndex(l)
+		s := l[from:to]
+		match := redata.regex[padMode].FindIndex(s)
 
 		if match != nil {
 			if padMode&padStart != 0 {
-				_, size := utf8.DecodeRune(l[match[0]:])
-				match[0] += size
+				match[0] = util.NextRunePos(s, match[0])
 			}
 			if padMode&padEnd != 0 {
-				_, size := utf8.DecodeLastRune(l[:match[1]])
-				match[1] -= size
+				match[1] = util.PreviousRunePos(s, match[1])
 			}
-			start := Loc{charpos + util.RunePos(l, match[0]), i}
-			end := Loc{charpos + util.RunePos(l, match[1]), i}
+			start := Loc{charpos + util.RunePos(s, match[0]), i}
+			end := Loc{charpos + util.RunePos(s, match[1]), i}
 			return [2]Loc{start, end}, true
 		}
 	}
