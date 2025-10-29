@@ -194,9 +194,7 @@ func (b *Buffer) ReplaceRegex(start, end Loc, search *regexp.Regexp, replace []b
 			matches := b.findAll(redata, from, to)
 			found += len(matches)
 
-			for j := len(matches) - 1; j >= 0; j-- {
-				// if we counted upwards, the different deltas would interfere
-				match := matches[j]
+			for _, match := range matches {
 				var newText []byte
 				if captureGroups {
 					newText = search.ReplaceAll(b.Substr(match[0], match[1]), replace)
