@@ -27,33 +27,6 @@ const (
 	padEnd
 )
 
-func findLineParams(b *Buffer, start, end Loc, i int) ([]byte, int, int) {
-	l := b.LineBytes(i)
-	charpos := 0
-	padMode := 0
-
-	if i == end.Y {
-		nchars := util.CharacterCount(l)
-		end.X = util.Clamp(end.X, 0, nchars)
-		if end.X < nchars {
-			l = util.SliceStart(l, end.X+1)
-			padMode |= padEnd
-		}
-	}
-
-	if i == start.Y {
-		nchars := util.CharacterCount(l)
-		start.X = util.Clamp(start.X, 0, nchars)
-		if start.X > 0 {
-			charpos = start.X - 1
-			l = util.SliceEnd(l, charpos)
-			padMode |= padStart
-		}
-	}
-
-	return l, charpos, padMode
-}
-
 // NewRegexpData creates RegexpData from a string
 func NewRegexpData(s string) (*RegexpData, error) {
 	var regex [4]*regexp.Regexp
@@ -87,7 +60,28 @@ func (b *Buffer) findDown(redata *RegexpData, start, end Loc) ([2]Loc, bool) {
 	}
 
 	for i := start.Y; i <= end.Y; i++ {
-		l, charpos, padMode := findLineParams(b, start, end, i)
+		l := b.LineBytes(i)
+		charpos := 0
+		padMode := 0
+
+		if i == end.Y {
+			nchars := util.CharacterCount(l)
+			end.X = util.Clamp(end.X, 0, nchars)
+			if end.X < nchars {
+				l = util.SliceStart(l, end.X+1)
+				padMode |= padEnd
+			}
+		}
+
+		if i == start.Y {
+			nchars := util.CharacterCount(l)
+			start.X = util.Clamp(start.X, 0, nchars)
+			if start.X > 0 {
+				charpos = start.X - 1
+				l = util.SliceEnd(l, charpos)
+				padMode |= padStart
+			}
+		}
 
 		match := redata.regex[padMode].FindIndex(l)
 
