@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"regexp/syntax"
+	"unicode/utf8"
 
 	"github.com/zyedidia/micro/v2/internal/util"
 )
@@ -94,6 +95,12 @@ func (b *Buffer) findDownFunc(redata *RegexpData, start, end Loc, find bytesFind
 			return util.RangeMap(match, func(j, pos int) Loc {
 				if pos >= 0 {
 					x := util.CharacterCount(l[:from+pos])
+					if j%2 == 0 {
+						r, _ := utf8.DecodeRune(s[pos:])
+						if util.IsMark(r) {
+							x--
+						}
+					}
 					return Loc{x, i}
 				} else { // start or end of unused submatch
 					return Loc{-1, -1}
