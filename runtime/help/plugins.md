@@ -1,18 +1,52 @@
 # Plugins
 
-This help topic is about creating plugins. If you need help installing or
+This help topic is mainly about creating plugins. If you need help installing or
 managing plugins, look for `plugin` commands in `help commands`. If you want to
 enable or disable a plugin, look for `Plugin options` in `help options`.
+
+## Default plugins
+
+The following plugins come pre-installed with micro:
+
+* `autoclose`: automatically closes brackets, quotes, etc...
+* `comment`: provides automatic commenting for a number of languages
+* `ftoptions`: alters some default options (notably indentation) depending on
+   the filetype
+* `linter`: provides extensible linting for many languages
+* `literate`: provides advanced syntax highlighting for the Literate
+   programming tool.
+* `status`: provides some extensions to the status line (integration with
+   Git and more).
+* `diff`: integrates the `diffgutter` option with Git. If you are in a Git
+   directory, the diff gutter will show changes with respect to the most
+   recent Git commit rather than the diff since opening the file.
+
+See `> help linter`, `> help comment`, and `> help status` for additional
+documentation specific to those plugins.
+
+These are good examples for many use-cases if you are looking to write
+your own plugins.
+
+## Creating a plugin
 
 Micro supports creating plugins with a simple Lua system. Plugins are
 folders containing Lua files and possibly other source files placed
 in `~/.config/micro/plug`. The plugin directory (within `plug`) should
-contain at least one Lua file and a `repo.json` file. The `repo.json` file
-provides additional information such as the name of the plugin, the
-plugin's website, dependencies, etc.
-[Here is an example `repo.json` file](https://github.com/micro-editor/updated-plugins/blob/master/go-plugin/repo.json)
-from the go plugin, which has the following file structure:
+contain at least one Lua file.
 
+Plugins may also add runtime files to micro, of which there are 4 types:
+* Colorschemes
+* Syntax files
+* Help files
+* Plugin files
+
+In most cases, a plugin will want to add help files, but in certain
+cases a plugin may also want to add colorschemes or syntax files.
+No directory structure is enforced, but keeping runtime files in their
+own directories is good practice.
+
+As an example, you can look at the [go plugin](https://github.com/micro-editor/updated-plugins/blob/master/go-plugin/repo.json)
+which has the following file structure:
 ```
 ~/.config/micro/plug/go-plugin/
     go.lua
@@ -21,30 +55,60 @@ from the go plugin, which has the following file structure:
         go-plugin.md
 ```
 
-The `go.lua` file contains the main code for the plugin, though the
-code may be distributed across multiple Lua files. The `repo.json`
-file contains information about the plugin, such as the website,
-description, version, and any requirements. Plugins may also
-have additional files that can be added to micro's runtime files,
-of which there are 5 types:
+## Using Go types
 
-* Colorschemes
-* Syntax files
-* Help files
-* Plugin files
-* Syntax header files
+Plugins use Lua but also have access to many functions and constants, both from
+micro and the Go standard library. When you use these, you will encounter values
+with a Go type most of the time.
 
-In most cases, a plugin will want to add help files, but in certain
-cases a plugin may also want to add colorschemes or syntax files.
-No directory structure is enforced, but keeping runtime files in their
-own directories is good practice.
+Standard Lua functions and operations can be used on booleans, numeric values,
+and strings. On other types, most Lua operations can be used.
+
+To call methods on a struct, use the `:` syntax. For example, with a `BufPane`
+object called `bp`, you could call the `Save` method in Lua with `bp:Save()`.
+
+### Arrays and maps
+
+You can get values like Lua tables. For example, `buf.Settings["tabsize"]`
+returns the value corresponding to `"tabsize"` in the `Settings` map of a Buffer
+object called `buf`.
+
+To iterate an array or map, you need to call it. Sometimes, you might need to
+store it first in a variable:
+
+```lua
+local settings = buf.Settings
+for name, key in settings() do
+   micro.Log(name)
+end
+```
+
+### Embedded types
+
+When the definition of a struct specifies the type only for one field, it embeds
+that type. The fields and methods on that embedded type can also be accessed
+directly, without the name of the embedded type.
+
+One example is `c.Loc.X`, which gets the `X` field of the `Loc` type embedded in
+a cursor object called `c`. It can be shortened to `c.X`.
+
+### Dereferencing fields
+
+When getting a struct field under another struct, a pointer will be returned.
+Although rare, there are cases the pointer needs to be dereferenced by negating
+the struct field which makes a constant copy:
+
+```lua
+local loc = -bp.Cursor.Loc
+bp.buf:Insert(loc, "example text")
+```
+
+This inserts "example text" at the current cursor location.
 
 ## Lua callbacks
 
-Plugins use Lua but also have access to many functions, both from micro
-and from the Go standard library. Plugins can also define functions that micro
-will call when certain events happen. Here is the list of callbacks
-that micro defines:
+Plugins can define functions that micro will call when certain events happen.
+Here is the list of callbacks that micro supports:
 
 * `init()`: this function should be used for your plugin initialization.
    This function is called after buffers have been initialized.
@@ -70,7 +134,7 @@ that micro defines:
 * `onSetActive(bufpane)`: runs when changing the currently active bufpane.
 
 * `onAction(bufpane)`: runs when `Action` is triggered by the user, where
-   `Action` is a bindable action (see `> help keybindings`). A bufpane
+   `Action` is a bindable action (listed in `> help keybindings`). A bufpane
    is passed as input. The function should return a boolean defining
    whether the action was successful, which is used when the action is
    chained with other actions (see `> help keybindings`) to determine whether
@@ -110,13 +174,11 @@ end
 The `bp` variable is a reference to the bufpane the action is being executed
 within. This is almost always the current bufpane.
 
-All available actions are listed in the keybindings section of the help.
-
 ## Accessing micro functions
 
 Some of micro's internal information is exposed in the form of packages, which
-can be imported by Lua plugins. A package can be imported in Lua, and a value
-within it can be accessed using the following syntax:
+can be imported by Lua plugins. A value within it can be accessed using the
+following syntax:
 
 ```lua
 local micro = import("micro")
@@ -370,31 +432,14 @@ The packages and their contents are listed below (in Go type signatures):
     Relevant links:
     [Rune](https://pkg.go.dev/builtin#rune)
 
-This may seem like a small list of available functions, but some of the objects
-returned by the functions have many methods. The Lua plugin may access any
-public methods of an object returned by any of the functions above.
+There may seem like a small amount of available functions, but some of the
+objects returned by the functions have many methods. The Lua plugin may access
+any public methods of an object returned by any of the functions.
+
 Unfortunately, it is not possible to list all the available functions on this
 page. Please go to the internal documentation at
 https://pkg.go.dev/github.com/zyedidia/micro/v2/internal to see the full list
-of available methods. Note that only methods of types that are available to
-plugins via the functions above can be called from a plugin. For an even more
-detailed reference, see the source code on Github.
-
-For example, with a BufPane object called `bp`, you could call the `Save`
-function in Lua with `bp:Save()`.
-
-Note that Lua uses the `:` syntax to call a function rather than Go's `.`
-syntax.
-
-```go
-micro.InfoBar().Message()
-```
-
-turns to
-
-```lua
-micro.InfoBar():Message()
-```
+of available methods.
 
 ## Accessing the Go standard library
 
@@ -476,46 +521,11 @@ for all runtime files. In addition, there is `AddRuntimeFileFromMemory` which
 adds a runtime file based on a string that may have been constructed at
 runtime.
 
-## Default plugins
+## Publishing plugins
 
-The following plugins come pre-installed with micro:
-
-* `autoclose`: automatically closes brackets, quotes, etc...
-* `comment`: provides automatic commenting for a number of languages
-* `ftoptions`: alters some default options (notably indentation) depending on
-   the filetype
-* `linter`: provides extensible linting for many languages
-* `literate`: provides advanced syntax highlighting for the Literate
-   programming tool.
-* `status`: provides some extensions to the status line (integration with
-   Git and more).
-* `diff`: integrates the `diffgutter` option with Git. If you are in a Git
-   directory, the diff gutter will show changes with respect to the most
-   recent Git commit rather than the diff since opening the file.
-
-See `> help linter`, `> help comment`, and `> help status` for additional
-documentation specific to those plugins.
-
-These are good examples for many use-cases if you are looking to write
-your own plugins.
-
-## Plugin Manager
-
-Micro also has a built in plugin manager, which you can invoke with the
-`> plugin ...` command, or in the shell with `micro -plugin ...`.
-
-For the valid commands you can use, see the `commands` help topic.
-
-The manager fetches plugins from the channels (which is simply a list of plugin
-metadata) which it knows about. By default, micro only knows about the [official
-channel](https://github.com/micro-editor/plugin-channel) but you can
-add your own third-party channels using the `pluginchannels` option and you can
-directly link third-party plugins to allow installation through the plugin
-manager with the `pluginrepos` option.
-
-If you'd like to publish a plugin you've made as an official plugin, you should
-upload your plugin online (preferably to Github) and add a `repo.json` file.
-This file will contain the metadata for your plugin. Here is an example:
+If you'd like to publish a plugin you've made, you should upload your plugin
+online (preferably to Github) and add a `repo.json` file. This file will contain
+the metadata for your plugin. Here is an example:
 
 ```json
 [{
@@ -528,16 +538,18 @@ This file will contain the metadata for your plugin. Here is an example:
       "Version": "1.0.0",
       "Url": "https://github.com/user/plugin/archive/v1.0.0.zip",
       "Require": {
-        "micro": ">=1.0.3"
+        "micro": ">=2.0.0"
       }
     }
   ]
 }]
 ```
 
-Then open a pull request at the [official plugin channel](https://github.com/micro-editor/plugin-channel),
-adding a link to the raw `repo.json` that is in your plugin repository.
-
+Please make sure to use [semver](https://semver.org/) for versioning.
 To make updating the plugin work, the first line of your plugin's lua code
 should contain the version of the plugin. (Like this: `VERSION = "1.0.0"`)
-Please make sure to use [semver](https://semver.org/) for versioning.
+
+You can open a pull request at the [official plugin channel](https://github.com/micro-editor/plugin-channel),
+adding a link to the raw `repo.json` that is in your plugin repository.
+
+## Plugin channels
