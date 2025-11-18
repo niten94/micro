@@ -24,15 +24,14 @@ The following plugins come pre-installed with micro:
 See `> help linter`, `> help comment`, and `> help status` for additional
 documentation specific to those plugins.
 
-These are good examples for many use-cases if you are looking to write
-your own plugins.
-
 ## Creating a plugin
 
 Micro supports creating plugins with a simple Lua system. Plugins are
 folders containing Lua files and possibly other source files placed
 in `~/.config/micro/plug`. The plugin directory (within `plug`) should
 contain at least one Lua file.
+
+The default plugins are good examples for many use-cases.
 
 Plugins may also add runtime files to micro, of which there are 4 types:
 * Colorschemes
@@ -69,34 +68,33 @@ object called `bp`, you could call the `Save` method in Lua with `bp:Save()`.
 
 ### Arrays and maps
 
-You can get values like Lua tables. For example, `buf.Settings["tabsize"]`
-returns the value corresponding to `"tabsize"` in the `Settings` map of a Buffer
-object called `buf`.
+You can access values in arrays and maps like Lua tables. For example,
+`buf.Settings["tabsize"]` returns the value corresponding to `"tabsize"` in the
+`Settings` map of a Buffer object called `buf`.
 
-To iterate an array or map, you need to call it. Sometimes, you might need to
-store it first in a variable:
+To iterate a Go array or map, you need to call it. Sometimes, you might need to
+store it first in a variable. Example:
 
 ```lua
-local settings = buf.Settings
-for name, key in settings() do
+for name, key in buf.Settings() do
    micro.Log(name)
 end
 ```
 
 ### Embedded types
 
-When the definition of a struct specifies the type only for one field, it embeds
-that type. The fields and methods on that embedded type can also be accessed
-directly, without the name of the embedded type.
+When a struct has a field where only its type is specified, it embeds that type.
+The fields and methods on that embedded type can be accessed, through its name
+or directly without it.
 
 One example is `c.Loc.X`, which gets the `X` field of the `Loc` type embedded in
 a cursor object called `c`. It can be shortened to `c.X`.
 
 ### Dereferencing fields
 
-When getting a struct field under another struct, a pointer will be returned.
-Although rare, there are cases the pointer needs to be dereferenced by negating
-the struct field which makes a constant copy:
+When getting a struct field under another struct, a pointer will always be
+returned. Although rare, there are cases the pointer needs to be dereferenced by
+negating the struct field into a constant copy:
 
 ```lua
 local loc = -bp.Cursor.Loc
