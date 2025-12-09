@@ -510,9 +510,6 @@ Here are the available options:
 
 ---
 
-Plugin options: all plugins come with a special option to enable or disable
-them. The option is a boolean with the same name as the plugin itself.
-
 Any option you set in the editor will be saved to the file
 `~/.config/micro/settings.json` so, in effect, your configuration file will be
 created for you. If you'd like to take your configuration with you to another

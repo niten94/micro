@@ -1,8 +1,15 @@
 # Plugins
 
-This help topic is mainly about creating plugins. If you need help installing or
-managing plugins, look for `plugin` commands in `help commands`. If you want to
-enable or disable a plugin, look for `Plugin options` in `help options`.
+Micro supports plugins with a simple but extensive Lua system.
+
+To install or manage plugins, look for `plugin` commands with `> help commands`.
+They can be retrieved from different sources using the `pluginchannels` and
+`pluginrepos` options (see `> help options`).
+
+Some third-party plugins may provide a help topic under its name, or contain a
+README file in its files.
+
+This help topic is mostly about creating and publishing plugins.
 
 ## Default plugins
 
@@ -24,10 +31,19 @@ The following plugins come pre-installed with micro:
 See `> help linter`, `> help comment`, and `> help status` for additional
 documentation specific to those plugins.
 
+## Disabling plugins
+
+All plugins come with a special option to enable or disable them, which is a
+boolean with the same name as the plugin itself.
+
 ## Creating a plugin
 
-Micro supports creating plugins with a simple Lua system. Plugins are
-folders containing Lua files and possibly other source files placed
+<!--
+   `init.lua` を述べようと思ったけどいい方法思いつけなくてもう書き直しやめたい
+   (笑)
+-->
+
+Plugins are folders containing Lua files and possibly other source files placed
 in `~/.config/micro/plug`. The plugin directory (within `plug`) should
 contain at least one Lua file.
 
@@ -54,58 +70,9 @@ which has the following file structure:
         go-plugin.md
 ```
 
-## Using Go types
-
-Plugins use Lua but also have access to many functions and constants, both from
-micro and the Go standard library. When you use these, you will encounter values
-with a Go type most of the time.
-
-Standard Lua functions and operations can be used on booleans, numeric values,
-and strings. On other types, most Lua operations can be used.
-
-To call methods on a struct, use the `:` syntax. For example, with a `BufPane`
-object called `bp`, you could call the `Save` method in Lua with `bp:Save()`.
-
-### Arrays and maps
-
-You can access values in arrays and maps like Lua tables. For example,
-`buf.Settings["tabsize"]` returns the value corresponding to `"tabsize"` in the
-`Settings` map of a Buffer object called `buf`.
-
-To iterate a Go array or map, you need to call it. Sometimes, you might need to
-store it first in a variable. Example:
-
-```lua
-for name, key in buf.Settings() do
-   micro.Log(name)
-end
-```
-
-### Embedded types
-
-When a struct has a field where only its type is specified, it embeds that type.
-The fields and methods on that embedded type can be accessed, through its name
-or directly without it.
-
-One example is `c.Loc.X`, which gets the `X` field of the `Loc` type embedded in
-a cursor object called `c`. It can be shortened to `c.X`.
-
-### Dereferencing fields
-
-When getting a struct field under another struct, a pointer will always be
-returned. Although rare, there are cases the pointer needs to be dereferenced by
-negating the struct field into a constant copy:
-
-```lua
-local loc = -bp.Cursor.Loc
-bp.buf:Insert(loc, "example text")
-```
-
-This inserts "example text" at the current cursor location.
-
 ## Lua callbacks
 
-Plugins can define functions that micro will call when certain events happen.
+Plugins mainly define functions that micro will call when certain events happen.
 Here is the list of callbacks that micro supports:
 
 * `init()`: this function should be used for your plugin initialization.
@@ -132,7 +99,7 @@ Here is the list of callbacks that micro supports:
 * `onSetActive(bufpane)`: runs when changing the currently active bufpane.
 
 * `onAction(bufpane)`: runs when `Action` is triggered by the user, where
-   `Action` is a bindable action (listed in `> help keybindings`). A bufpane
+   `Action` is a bindable action (see `> help keybindings`). A bufpane
    is passed as input. The function should return a boolean defining
    whether the action was successful, which is used when the action is
    chained with other actions (see `> help keybindings`) to determine whether
@@ -171,6 +138,56 @@ end
 
 The `bp` variable is a reference to the bufpane the action is being executed
 within. This is almost always the current bufpane.
+
+## Using Go types
+
+Plugins use Lua but also have access to many functions and constants, both from
+micro and the Go standard library. When you use these, you will encounter values
+with a Go type most of the time.
+
+Standard Lua functions and operations can be used on booleans, numeric values,
+and strings. On other types, most Lua operations can be used.
+
+To call methods on a struct, use the `:` syntax. For example, with a `BufPane`
+object called `bp`, you could call the `Save` method in Lua with `bp:Save()`.
+
+### Arrays and maps
+
+You can access values in arrays and maps like Lua tables. For example,
+`buf.Settings["tabsize"]` returns the value corresponding to `"tabsize"` in the
+`Settings` map of a Buffer object called `buf`.
+
+To iterate a Go array or map, you need to call it. Sometimes, you might need to
+store it first in a variable. Example:
+
+```lua
+for key, value in buf.Settings() do
+   micro.Log(key)
+end
+```
+
+### Embedded types
+
+When a struct has a field where only its type is specified, it embeds that type.
+The fields and methods on that embedded type can be accessed, through its name
+or directly without it.
+
+One example is `c.Loc.X`, which gets the `X` field of the `Loc` type embedded in
+a cursor object called `c`. It can be shortened to `c.X`.
+
+### Dereferencing fields
+
+When getting a struct field under another struct, a pointer will always be
+returned. Although rare, there are cases the pointer needs to be dereferenced by
+negating the struct field:
+
+```lua
+local loc = -bp.Cursor.Loc
+bp.buf:Insert(loc, "example text")
+```
+
+This inserts "example text" at the current cursor location. Dereferencing a
+pointer creates a copy, which cannot be modified in Lua.
 
 ## Accessing micro functions
 
@@ -549,5 +566,3 @@ should contain the version of the plugin. (Like this: `VERSION = "1.0.0"`)
 
 You can open a pull request at the [official plugin channel](https://github.com/micro-editor/plugin-channel),
 adding a link to the raw `repo.json` that is in your plugin repository.
-
-## Plugin channels
