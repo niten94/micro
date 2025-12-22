@@ -1,6 +1,8 @@
 # Plugins
 
-Micro supports plugins with a simple but extensive Lua system.
+Micro supports plugins with a simple but extensive Lua system. This help topic
+gives some information on using plugins, and the rest of it is mostly about
+creating them. To publish a plugin, please see the end of this file.
 
 To install or manage plugins, look for `plugin` commands with `> help commands`.
 They can be retrieved from different sources using the `pluginchannels` and
@@ -8,8 +10,6 @@ They can be retrieved from different sources using the `pluginchannels` and
 
 Some third-party plugins may provide a help topic under its name, or contain a
 README file in its files.
-
-This help topic is mostly about creating and publishing plugins.
 
 ## Default plugins
 
@@ -38,22 +38,31 @@ boolean with the same name as the plugin itself.
 
 ## Creating a plugin
 
-<!--
-   `init.lua` を述べようと思ったけどいい方法思いつけなくてもう書き直しやめたい
-   (笑)
--->
+Plugins are folders placed in `~/.config/micro/plug`, which contain Lua files
+and possibly other source files. The plugin directory (within `plug`) should
+contain at least one `.lua` file with any name.
 
-Plugins are folders containing Lua files and possibly other source files placed
-in `~/.config/micro/plug`. The plugin directory (within `plug`) should
-contain at least one Lua file.
+The name of the plugin is taken from the directory name, and may only contain
+alphanumeric characters and underscore.
+
+If the plugin contains `repo.json`, its name is taken there. This file only
+has a purpose if the plugin is published online, which is explained later in
+this help topic.
+
+<!-- quoted: https://github.com/zyedidia/micro/issues/3928#issuecomment-3617820052 -->
+As a special case, Micro treats `~/.config/micro/init.lua` as a plugin with the
+name `initlua`. You can place Lua code for any personal customization here.
 
 The default plugins are good examples for many use-cases.
 
-Plugins may also add runtime files to micro, of which there are 4 types:
+### Runtime files
+
+Except for `init.lua`, plugins may also add runtime files to micro, of which
+there are 4 types:
 * Colorschemes
 * Syntax files
 * Help files
-* Plugin files
+* Plugin code
 
 In most cases, a plugin will want to add help files, but in certain
 cases a plugin may also want to add colorschemes or syntax files.
@@ -136,7 +145,7 @@ function onSave(bp)
 end
 ```
 
-The `bp` variable is a reference to the bufpane the action is being executed
+The `bp` parameter here corresponds to the bufpane the action is being executed
 within. This is almost always the current bufpane.
 
 ## Using Go types
@@ -468,7 +477,7 @@ local ioutil = import("io/ioutil")
 local fmt = import("fmt")
 local micro = import("micro")
 
-local data, err = ioutil.ReadFile("SomeFile.txt")
+local data, err = os.ReadFile("SomeFile.txt")
 
 if err ~= nil then
     micro.InfoBar():Error("Error reading file: SomeFile.txt")
@@ -489,7 +498,7 @@ list of functions that are supported, you can look through `lua.go`
 
 * [fmt](https://pkg.go.dev/fmt)
 * [io](https://pkg.go.dev/io)
-* [io/ioutil](https://pkg.go.dev/io/ioutil)
+* [io/ioutil](https://pkg.go.dev/io/ioutil) (deprecated)
 * [net](https://pkg.go.dev/net)
 * [math](https://pkg.go.dev/math)
 * [math/rand](https://pkg.go.dev/math/rand)
