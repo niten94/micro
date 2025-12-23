@@ -46,8 +46,8 @@ The name of the plugin is taken from the directory name, and may only contain
 alphanumeric characters and underscore.
 
 If the plugin contains `repo.json`, its name is taken there. This file only
-has a purpose if the plugin is published online, which is explained later in
-this help topic.
+has a purpose if the plugin is published online, which is explained at the end
+of this help topic.
 
 <!-- quoted: https://github.com/zyedidia/micro/issues/3928#issuecomment-3617820052 -->
 As a special case, Micro treats `~/.config/micro/init.lua` as a plugin with the
@@ -55,33 +55,24 @@ name `initlua`. You can place Lua code for any personal customization here.
 
 The default plugins are good examples for many use-cases.
 
-### Runtime files
+<!--
+   trying to imitate flow of text in `colors.md` which is written like a guide
+   while being a reference
+-->
+### General overview
 
-Except for `init.lua`, plugins may also add runtime files to micro, of which
-there are 4 types:
-* Colorschemes
-* Syntax files
-* Help files
-* Plugin code
+Plugins mainly define functions that micro will call when certain events happen.
+They could also add runtime files, or add commands and actions.
 
-In most cases, a plugin will want to add help files, but in certain
-cases a plugin may also want to add colorschemes or syntax files.
-No directory structure is enforced, but keeping runtime files in their
-own directories is good practice.
+Micro uses a built-in Lua 5.1 interpreter. Plugins may use functions provided
+by micro, and the standard library of Lua and Go. Types are automatically
+converted between Lua and Go, and vice-versa.
 
-As an example, you can look at the [go plugin](https://github.com/micro-editor/updated-plugins/blob/master/go-plugin/repo.json)
-which has the following file structure:
-```
-~/.config/micro/plug/go-plugin/
-    go.lua
-    repo.json
-    help/
-        go-plugin.md
-```
+Plugins can call the methods of Go types and access their fields, including the
+Go types defined by micro.
 
 ## Lua callbacks
 
-Plugins mainly define functions that micro will call when certain events happen.
 Here is the list of callbacks that micro supports:
 
 * `init()`: this function should be used for your plugin initialization.
@@ -148,6 +139,101 @@ end
 The `bp` parameter here corresponds to the bufpane the action is being executed
 within. This is almost always the current bufpane.
 
+## Accessing functions
+
+Although it is rather small, [the Lua standard library](https://www.lua.org/manual/5.1/manual.html#5)
+can be accessed without doing anything prior.
+
+<!-- TODO: access on functions provided by micro is unclear -->
+To access functions from micro or the Go standard library, import it using its
+path, then you can use it. For example:
+
+```lua
+local go_os = import("os")
+local micro = import("micro")
+local util = import("micro/util")
+--local fmt = import("fmt")
+
+function init()
+   local data, err = go_os.ReadFile("SomeFile.txt")
+
+   if err ~= nil then
+       micro.InfoBar():Error("Error reading file: SomeFile.txt")
+   else
+       -- Data is returned as an array of bytes, so convert it to a string
+       local str = util.String(data)
+
+       -- Or you can use the fmt package in the Go standard library to convert
+       --local str = fmt.Sprintf("%s", data)
+
+       -- Do something with the file you just read!
+       -- ...
+   end
+end
+```
+
+Here are the packages from the Go standard library that you can access.
+Nearly all functions from these packages are exported. For an exact
+list of functions that are supported, you can look through
+`internal/lua/lua.go` (which should be easy to understand).
+
+* [fmt](https://pkg.go.dev/fmt)
+* [io](https://pkg.go.dev/io)
+* [io/ioutil](https://pkg.go.dev/io/ioutil) (deprecated)
+* [net](https://pkg.go.dev/net)
+* [math](https://pkg.go.dev/math)
+* [math/rand](https://pkg.go.dev/math/rand)
+* [os](https://pkg.go.dev/os)
+* [runtime](https://pkg.go.dev/runtime)
+* [path](https://pkg.go.dev/path)
+* [filepath](https://pkg.go.dev/filepath)
+* [strings](https://pkg.go.dev/strings)
+* [regexp](https://pkg.go.dev/regexp)
+* [errors](https://pkg.go.dev/errors)
+* [time](https://pkg.go.dev/time)
+* [unicode/utf8](https://pkg.go.dev/unicode/utf8)
+* [archive/zip](https://pkg.go.dev/archive/zip)
+* [net/http](https://pkg.go.dev/net/http)
+
+The following functions from the go-humanize package are also available:
+
+* `humanize`:
+    - `Bytes(s uint64) string`: produces a human readable representation of
+       an SI size.
+    - `Ordinal(x int) string`: gives you the input number in a rank/ordinal
+       format.
+
+<!--
+   TODO:
+   there are a lot of common operations which can be done
+   some mentioned in "general overview" which might be somewhat redundant
+-->
+## Common operations
+
+### Runtime files
+
+Except for `init.lua`, plugins may also add runtime files to micro, of which
+there are 4 types:
+* Colorschemes
+* Syntax files
+* Help files
+* Plugin code
+
+In most cases, a plugin will want to add help files, but in certain
+cases a plugin may also want to add colorschemes or syntax files.
+No directory structure is enforced, but keeping runtime files in their
+own directories is good practice.
+
+As an example, you can look at the [go plugin](https://github.com/micro-editor/updated-plugins/blob/master/go-plugin/repo.json)
+which has the following file structure:
+```
+~/.config/micro/plug/go-plugin/
+    go.lua
+    repo.json
+    help/
+        go-plugin.md
+```
+
 ## Using Go types
 
 Plugins use Lua but also have access to many functions and constants, both from
@@ -198,18 +284,23 @@ bp.buf:Insert(loc, "example text")
 This inserts "example text" at the current cursor location. Dereferencing a
 pointer creates a copy, which cannot be modified in Lua.
 
+<!--
+   TODO:
+   might not really be a good idea lowering this part
+   longer than explanations unlike colors.md
+   probably somewhat fine? plugin callback list at top
+-->
 ## Accessing micro functions
 
-Some of micro's internal information is exposed in the form of packages, which
-can be imported by Lua plugins. A value within it can be accessed using the
-following syntax:
+Micro provides some functions, which can be imported by Lua plugins through a
+path using the following syntax:
 
 ```lua
 local micro = import("micro")
 micro.Log("Hello")
 ```
 
-The packages and their contents are listed below (in Go type signatures):
+The paths and their provided content are listed below (in Go type signatures):
 
 * `micro`
     - `TermMessage(msg any...)`: temporarily close micro and print a
@@ -220,8 +311,8 @@ The packages and their contents are listed below (in Go type signatures):
 
     - `InfoBar() *InfoPane`: return the infobar BufPane object.
 
-    - `Log(msg any...)`: write a message to `log.txt` (requires
-       `-debug` flag, or binary built with `build-dbg`).
+    - `Log(msg any...)`: write a message to `./log.txt` (requires
+       `-debug` flag, or binary built with `make build-dbg`).
 
     - `SetStatusInfoFn(fn string)`: register the given lua function as
        accessible from the statusline formatting options.
@@ -464,66 +555,6 @@ Unfortunately, it is not possible to list all the available functions on this
 page. Please go to the internal documentation at
 https://pkg.go.dev/github.com/zyedidia/micro/v2/internal to see the full list
 of available methods.
-
-## Accessing the Go standard library
-
-It is possible for your lua code to access many of the functions in the Go
-standard library.
-
-Simply import the package you'd like, and then you can use it. For example:
-
-```lua
-local ioutil = import("io/ioutil")
-local fmt = import("fmt")
-local micro = import("micro")
-
-local data, err = os.ReadFile("SomeFile.txt")
-
-if err ~= nil then
-    micro.InfoBar():Error("Error reading file: SomeFile.txt")
-else
-    -- Data is returned as an array of bytes
-    -- Using Sprintf will convert it to a string
-    local str = fmt.Sprintf("%s", data)
-
-    -- Do something with the file you just read!
-    -- ...
-end
-```
-
-Here are the packages from the Go standard library that you can access.
-Nearly all functions from these packages are supported. For an exact
-list of functions that are supported, you can look through `lua.go`
-(which should be easy to understand).
-
-* [fmt](https://pkg.go.dev/fmt)
-* [io](https://pkg.go.dev/io)
-* [io/ioutil](https://pkg.go.dev/io/ioutil) (deprecated)
-* [net](https://pkg.go.dev/net)
-* [math](https://pkg.go.dev/math)
-* [math/rand](https://pkg.go.dev/math/rand)
-* [os](https://pkg.go.dev/os)
-* [runtime](https://pkg.go.dev/runtime)
-* [path](https://pkg.go.dev/path)
-* [filepath](https://pkg.go.dev/filepath)
-* [strings](https://pkg.go.dev/strings)
-* [regexp](https://pkg.go.dev/regexp)
-* [errors](https://pkg.go.dev/errors)
-* [time](https://pkg.go.dev/time)
-* [unicode/utf8](https://pkg.go.dev/unicode/utf8)
-* [archive/zip](https://pkg.go.dev/archive/zip)
-* [net/http](https://pkg.go.dev/net/http)
-
-The following functions from the go-humanize package are also available:
-
-* `humanize`:
-    - `Bytes(s uint64) string`: produces a human readable representation of
-       an SI size.
-    - `Ordinal(x int) string`: gives you the input number in a rank/ordinal
-       format.
-
-[The Lua standard library](https://www.lua.org/manual/5.1/manual.html#5) is also
-available to plugins, though it is rather small.
 
 ## Adding help files, syntax files, or colorschemes in your plugin
 
